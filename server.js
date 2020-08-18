@@ -3,10 +3,10 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const app = express();
-const dns = require('dns');
-const TinyUrl = require('./models/tinyUrl');
 const isUrl = require('is-url');
-const { normalize } = require('path');
+const slowDown = require('express-slow-down');
+const rateLimit = require('express-rate-limit');
+const TinyUrl = require('./models/tinyUrl');
 
 require('dotenv').config();
 
@@ -38,11 +38,24 @@ const urlValidationPromise = (url) => {
     });
 };
 
-app.post('/api/shorturl/new', (req, res) => { 
-    urlValidationPromise(req.body.original_url).then(() => {
-        TinyUrl.create({original_url: req.body.original_url})
+const speedLimiter = slowDown({
+    windowMs: 60 * 1000,
+    delayAfter: 1,
+    delayMs: 3000
+});
+
+const rateLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 3
+});
+
+app.post('/api/shorturl/new', rateLimiter, speedLimiter, (req, res) => { 
+    const urlFromReq = req.body.original_url;
+    
+    urlValidationPromise(urlFromReq).then(() => {
+        TinyUrl.create({original_url: urlFromReq})
         .then(()=>{
-            TinyUrl.findOne({original_url: req.body.original_url})
+            TinyUrl.findOne({original_url: urlFromReq})
             .select({_id: 0, __v: 0})
             .exec((error, data) => {
                 if(error) return console.log(error);
