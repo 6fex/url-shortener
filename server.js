@@ -5,10 +5,17 @@ const cors = require('cors');
 const app = express();
 const dns = require('dns');
 const TinyUrl = require('./models/tinyUrl');
+const isUrl = require('is-url');
+const { normalize } = require('path');
 
 require('dotenv').config();
 
 mongoose.connect(process.env.MONGO_URI, {useNewUrlParser: true, useUnifiedTopology: true});
+
+const port = process.env.PORT || 9999;
+app.listen(port, () => {
+    console.log(`listening ta port ${port}`);
+});
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -20,22 +27,45 @@ app.get('/', (req, res) => {
 
 app.use(express.static('public'));
 
-app.post('/api/shorturl/new', async (req, res) => { 
-    await TinyUrl.create({original_url: req.body.fullUrl});
-    await TinyUrl.findOne({original_url: req.body.fullUrl}, (error, data) => {
-        if(error) console.log(error);
-        res.json(data);
+const urlValidationPromise = (url) => {
+    return new Promise((resolve, reject) => {
+    const validUrl = isUrl(url);
+    console.log(!validUrl);
+        if(!validUrl) {
+            console.log(error, address, family);
+            reject();
+        } else {
+            resolve();
+        };
     });
+};
+
+app.post('/api/shorturl/new', (req, res) => { 
+    urlValidationPromise(req.body.original_url).then(() => {
+        TinyUrl.create({original_url: req.body.original_url})
+        .then(()=>{
+            TinyUrl.findOne({original_url: req.body.original_url})
+            .select({_id: 0, __v: 0})
+            .exec((error, data) => {
+                if(error) return console.log(error);
+                res.json(data);
+            });
+        });
+    }).catch(() => res.json({error: "invalid url"}));
 });
 
 app.get('/api/shorturl/:slug', async (req, res) => {
     const { slug } = req.params;
     
-    await TinyUrl.findOne({short_url: slug}, (error, data) => {
+    const matchingSlug = await TinyUrl.findOne({short_url: slug}, (error, data) => {
         if(error) return console.log(error);
         console.log(data);
-        res.redirect(data.original_url);
+        return(data);
     });
+    if(matchingSlug === null) {
+        res.json({error: "invalid_url"});
+    } else {
+        res.redirect(matchingSlug.original_url);
+    };
 });
 
-app.listen(process.env.PORT || 2137);
