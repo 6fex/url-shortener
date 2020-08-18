@@ -30,9 +30,7 @@ app.use(express.static('public'));
 const urlValidationPromise = (url) => {
     return new Promise((resolve, reject) => {
     const validUrl = isUrl(url);
-    console.log(!validUrl);
         if(!validUrl) {
-            console.log(error, address, family);
             reject();
         } else {
             resolve();
@@ -59,7 +57,6 @@ app.get('/api/shorturl/:slug', async (req, res) => {
     
     const matchingSlug = await TinyUrl.findOne({short_url: slug}, (error, data) => {
         if(error) return console.log(error);
-        console.log(data);
         return(data);
     });
     if(matchingSlug === null) {
