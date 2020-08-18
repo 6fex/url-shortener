@@ -53,15 +53,27 @@ app.post('/api/shorturl/new', rateLimiter, speedLimiter, (req, res) => {
     const urlFromReq = req.body.original_url;
     
     urlValidationPromise(urlFromReq).then(() => {
-        TinyUrl.create({original_url: urlFromReq})
-        .then(()=>{
-            TinyUrl.findOne({original_url: urlFromReq})
-            .select({_id: 0, __v: 0})
-            .exec((error, data) => {
-                if(error) return console.log(error);
-                res.json(data);
-            });
-        });
+        let entryId;
+        const created = () => {
+            return new Promise((resolve, reject) => {
+                TinyUrl.create({original_url: urlFromReq}, (error, data) => {
+                    if(data._id !== null) {
+                        entryId = data._id;
+                        resolve();
+                    } else {
+                        reject();
+                    };
+                });
+            })
+        }
+        
+        created().then(() =>{
+        TinyUrl.findOne({_id: entryId})
+        .select({_id: 0, __v: 0})
+        .exec((error, data) => {
+            if(error) return console.log(error);
+            res.json(data);
+        })});
     }).catch(() => res.json({error: "invalid url"}));
 });
 
@@ -79,3 +91,12 @@ app.get('/api/shorturl/:slug', async (req, res) => {
     };
 });
 
+app.get('/api/shorturl/', (req, res) => {
+    TinyUrl.find({})
+    .select({_id: 0, __v: 0})
+    .exec((error, urls) => {
+        const urlMap = {};
+        urls.forEach((url) => urlMap[url.short_url] = url.original_url);
+        res.json(urlMap);
+    });
+});
