@@ -10,11 +10,21 @@
     <body>
         <div class="container-fluid text-center">
             <h1>tiny URL's</h1>
-            <form action="/api/shorturl/new" method="POST" class="my-4 form-inline">
-                <label for="original_url" class="sr-only">URL here</label>
-                <input required type="url" name="original_url" id="original_url" placeholder="URL" class="form-control col" autofocus>
-                <button type="submit" class="btn btn-dark btn-lg my-3">tinfy</button>
-            </form>
+            <main id="app">
+                <form @submit.prevent="createUrl()" class="my-4 form-inline">
+                    <label for="original_url" class="sr-only">URL here</label>
+                    <input required type="url" v-model="original_url" name="original_url" id="original_url" placeholder="URL" class="form-control col" autofocus>
+                    <button type="submit" value="click" class="btn btn-light my-3" id="submit">tinyfy</button>
+                </form>
+                <div v-if="created">
+                    <a :href="created">{{created}}</a>
+                </div>
+                <div v-if="error">
+                    <p>{{error}}</p>
+                </div>
+            </main>
+            <script src="https://unpkg.com/vue@2.6.11/dist/vue.js"></script>
+            <script src="app.js"></script>
         </div>
-    </body>
+    </body> 
 </html>

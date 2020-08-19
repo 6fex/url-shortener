@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const app = express();
 const isUrl = require('is-url');
-const slowDown = require('express-slow-down');
 const rateLimit = require('express-rate-limit');
 const TinyUrl = require('./models/tinyUrl');
 
@@ -38,18 +37,12 @@ const urlValidationPromise = (url) => {
     });
 };
 
-const speedLimiter = slowDown({
-    windowMs: 60 * 1000,
-    delayAfter: 1,
-    delayMs: 3000
-});
-
 const rateLimiter = rateLimit({
-    windowMs: 60 * 1000,
-    max: 3
+    windowMs: 20 * 1000,
+    max: 1
 });
 
-app.post('/api/shorturl/new', rateLimiter, speedLimiter, (req, res) => { 
+app.post('/api/shorturl/new', rateLimiter, (req, res) => { 
     const urlFromReq = req.body.original_url;
     
     urlValidationPromise(urlFromReq).then(() => {

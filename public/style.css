@@ -4,9 +4,19 @@ html {
 
 body {
     min-height: 100%;
+    background-color: #1c1c1c;
+    color: #ffffff;
 }
 
 .container-fluid {
     position: fixed;
     top: 30%;
+}
+
+#submit {
+    font-weight: 700;
+}
+
+h1 {
+    font-weight: bold;
 }
